@@ -49,12 +49,14 @@ async function run() {
         })
 
         app.get('/carts', async (req, res) => {
-            const result = await CartCollection.find().toArray()
+            const email = req.query.email;
+            const query = { email: email }
+            const result = await CartCollection.find(query).toArray()
             res.send(result)
         })
-        
-        
-        
+
+
+
 
 
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
