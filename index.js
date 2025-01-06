@@ -30,9 +30,26 @@ async function run() {
         // Send a ping to confirm a successful connection
         // await client.db("admin").command({ ping: 1 });
 
+        const userCollection = client.db('restaurants').collection('users')
         const MenuCollection = client.db('restaurants').collection('menu')
         const ReviewCollection = client.db('restaurants').collection('reviews')
         const CartCollection = client.db('restaurants').collection('carts')
+
+        app.post('/users', async (req, res) => {
+            const data = req.body;
+            const query = { email: data.email }
+            const isAxist = await userCollection.findOne(query)
+            if (isAxist) {
+                return res.send({ message: 'User data alrady added in database ',  insertedId: null })
+            }
+            const result = await userCollection.insertOne(data);
+            res.send(result);
+        })
+
+        app.get('/users', async (req, res) => {
+            const data = await userCollection.find().toArray()
+            res.send(data)
+        })
 
         app.get('/menu', async (req, res) => {
             const result = await MenuCollection.find().toArray()
