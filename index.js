@@ -1,6 +1,7 @@
-const express = require('express')
-const cors = require('cors')
-require('dotenv').config()
+const express = require('express');
+const cors = require('cors');
+const jwt = require('jsonwebtoken');
+require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 9000
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
@@ -11,6 +12,24 @@ app.get('/', (req, res) => {
     res.send('Local Host Play on port 9000')
 })
 
+//jwt  Verification Midleware
+
+const verification = (req, res, next) => {
+    if (!req.headers.authorization) {
+        return res.status(401).send({ message: 'forbidden Access' })
+    }
+
+    const token = req.headers.authorization.split(' ')[1];
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECURE, (err, dec) => {
+        if (err) {
+            return res.status(401).send({ message: 'forbidden Access' })
+        }
+        req.user = dec;
+        next()
+
+    })
+
+}
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.xihi8.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -35,7 +54,20 @@ async function run() {
         const ReviewCollection = client.db('restaurants').collection('reviews')
         const CartCollection = client.db('restaurants').collection('carts')
 
-        app.get('/users', async (req, res) => {
+
+
+
+        // eta Cookie parser er poribotte local host e use kora hoyece tai cookie-parser middleware use hoy nai and res.cookie('token' : token , { httpOnly : true , secure : false}) use kora hoy nai 
+
+        app.post('/jwt', async (req, res) => {
+            const data = req.body;
+            const token = jwt.sign(data, process.env.ACCESS_TOKEN_SECURE, { expiresIn: '5h' });
+            res.send({ token })
+        })
+
+
+
+        app.get('/users', verification, async (req, res) => {
             const data = await userCollection.find().toArray()
             res.send(data)
         })
