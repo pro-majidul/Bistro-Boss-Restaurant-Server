@@ -35,6 +35,11 @@ async function run() {
         const ReviewCollection = client.db('restaurants').collection('reviews')
         const CartCollection = client.db('restaurants').collection('carts')
 
+        app.get('/users', async (req, res) => {
+            const data = await userCollection.find().toArray()
+            res.send(data)
+        })
+
         app.post('/users', async (req, res) => {
             const data = req.body;
             const query = { email: data.email }
@@ -46,9 +51,16 @@ async function run() {
             res.send(result);
         })
 
-        app.get('/users', async (req, res) => {
-            const data = await userCollection.find().toArray()
-            res.send(data)
+        app.patch('/users/admin/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) }
+            const updateDoc = {
+                $set: {
+                    role: 'Admin'
+                }
+            }
+            const result = await userCollection.updateOne(filter, updateDoc);
+            res.send(result)
         })
 
         app.delete('/users/:id', async (req, res) => {
