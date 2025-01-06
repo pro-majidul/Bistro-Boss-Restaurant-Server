@@ -40,7 +40,7 @@ async function run() {
             const query = { email: data.email }
             const isAxist = await userCollection.findOne(query)
             if (isAxist) {
-                return res.send({ message: 'User data alrady added in database ',  insertedId: null })
+                return res.send({ message: 'User data alrady added in database ', insertedId: null })
             }
             const result = await userCollection.insertOne(data);
             res.send(result);
@@ -49,6 +49,13 @@ async function run() {
         app.get('/users', async (req, res) => {
             const data = await userCollection.find().toArray()
             res.send(data)
+        })
+
+        app.delete('/users/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await userCollection.deleteOne(query);
+            res.send(result)
         })
 
         app.get('/menu', async (req, res) => {
