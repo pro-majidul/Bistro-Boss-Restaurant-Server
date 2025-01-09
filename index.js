@@ -30,15 +30,7 @@ const verification = (req, res, next) => {
     })
 
 }
-const verifyAdmin = async (req, res, next) => {
-    const email = req.user.email;
-    const Query = { email: email };
-    const user = await userCollection.findOne(Query);
-    if (!user?.role === 'Admin') {
-        return res.status(403).send({ message: ' Forbidden Access' })
-    }
-    next()
-}
+
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.xihi8.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -65,6 +57,23 @@ async function run() {
 
 
 
+        // verify Admin after verify token 
+        const verifyAdmin = async (req, res, next) => {
+            // call kora token er email 
+            const email = req.user.email;
+            // email diye khoja hobe oi email userCollection e ace ki na 
+            const Query = { email: email };
+            // email diye khoje kora hocce
+            const user = await userCollection.findOne(Query);
+
+            // khoj korar por jei email ta pawya jabe oitar vitor jodi admin role na thake tahole se vul korce curi korar try korce 
+            if (!user?.role === 'Admin') {
+                return res.status(403).send({ message: ' Forbidden Access' })
+            }
+            // sobkicu thik thak thakle se porer thape jabe
+            next()
+        }
+
 
         // eta Cookie parser er poribotte local host e use kora hoyece tai cookie-parser middleware use hoy nai and res.cookie('token' : token , { httpOnly : true , secure : false}) use kora hoy nai 
 
@@ -79,6 +88,43 @@ async function run() {
         app.get('/users', verification, verifyAdmin, async (req, res) => {
             const data = await userCollection.find().toArray()
             res.send(data)
+        })
+
+
+
+        // user er role onujayi dashboard e routes show korar jonne 
+
+        // User Admin ki na seta check hobe
+
+        //admin er vitor email ta deya ace je email dilam oi email ta admin a ace ki na tumi check kore janaw amake 
+
+        // eta admin ki na seta check korar jonne ekta verify token lagbe token verify hole tarpor admin check kora hobe 
+
+
+        app.get('/users/admin/:email', verification, async (req, res) => {
+            // jei email diye call kora hoyece sei email ta 
+            const email = req.params.email;
+            console.log('email', email);
+            // jei token diye call kora hoyece sei email ta 
+            const userEmail = req.user.email;
+            console.log('user,email', userEmail);
+            // userCollection er vitor ki diye search korbe seta
+            const query = { email: email };
+            // calling email ar token er email same ki na seta check korte hobe
+            if (email != userEmail) {
+                return res.status(403).send({ message: "UnAuthorize Access" })
+            }
+
+            // userCollection er vitor email ta ace ki na seta check kore khuje ber kore niye aste hobe 
+            const result = await userCollection.findOne(query);
+            let Admin = false;
+
+            // jodi email ta khuje pay tahole ar email er vitor role er man admin hoy thaole Admin= true hobe ar na pale admin= false thakbe ,, tahole se ar admin er route gulo dekhte pabe na 
+            if (result) {
+                Admin = result?.role === "Admin";
+            }
+            // admin true naki fale seta object akare send kore dey holo 
+            res.send({ Admin })
         })
 
         app.post('/users', async (req, res) => {
@@ -127,22 +173,20 @@ async function run() {
 
         app.get('/carts', async (req, res) => {
             const email = req.query.email;
+            // console.log(' line 148', email);
             const query = {
                 userEmail: email
             }
             const result = await CartCollection.find(query).toArray()
             res.send(result)
         })
+
         app.delete('/carts/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) }
             const result = await CartCollection.deleteOne(query)
             res.send(result)
         })
-
-
-
-
 
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
