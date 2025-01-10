@@ -68,7 +68,7 @@ async function run() {
 
             // khoj korar por jei email ta pawya jabe oitar vitor jodi admin role na thake tahole se vul korce curi korar try korce 
             if (!user?.role === 'Admin') {
-                return res.status(403).send({ message: ' Forbidden Access' })
+                return res.status(403).send({ message: ' Forbidden Access cannot verify admin ' })
             }
             // sobkicu thik thak thakle se porer thape jabe
             next()
@@ -79,7 +79,7 @@ async function run() {
 
         app.post('/jwt', async (req, res) => {
             const data = req.body;
-            const token = jwt.sign(data, process.env.ACCESS_TOKEN_SECURE, { expiresIn: '5h' });
+            const token = jwt.sign(data, process.env.ACCESS_TOKEN_SECURE, { expiresIn: '10h' });
             res.send({ token })
         })
 
@@ -104,15 +104,15 @@ async function run() {
         app.get('/users/admin/:email', verification, async (req, res) => {
             // jei email diye call kora hoyece sei email ta 
             const email = req.params.email;
-            console.log('email', email);
+            // console.log('email', email);
             // jei token diye call kora hoyece sei email ta 
             const userEmail = req.user.email;
-            console.log('user,email', userEmail);
+            // console.log('user,email', userEmail);
             // userCollection er vitor ki diye search korbe seta
             const query = { email: email };
             // calling email ar token er email same ki na seta check korte hobe
             if (email != userEmail) {
-                return res.status(403).send({ message: "UnAuthorize Access" })
+                return res.status(403).send({ message: "forbidden Access user email is not admin " })
             }
 
             // userCollection er vitor email ta ace ki na seta check kore khuje ber kore niye aste hobe 
@@ -161,6 +161,33 @@ async function run() {
             const result = await MenuCollection.find().toArray()
             res.send(result)
         })
+
+        app.post('/menu', verification, verifyAdmin, async (req, res) => {
+            const data = req.body;
+            const result = await MenuCollection.insertOne(data)
+            res.send(result)
+        })
+
+        app.patch('/menu/:id', verification, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const data = req.body;
+            const query = { _id: id };
+            const option = { upsert: true };
+            const updateDoc = {
+                $set: data
+            }
+            const result = await MenuCollection.updateOne(query, updateDoc, option)
+            res.send(result)
+        })
+
+        app.delete('/menu/:id', verification, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: id }
+            const result = await MenuCollection.deleteOne(query)
+            res.send(result)
+        })
+
+
         app.get('/review', async (req, res) => {
             const result = await ReviewCollection.find().toArray()
             res.send(result)
