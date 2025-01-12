@@ -258,6 +258,84 @@ async function run() {
         })
 
 
+        // starts or analitics 
+        app.get('/admin-stats', verification, verifyAdmin, async (req, res) => {
+            const users = await userCollection.estimatedDocumentCount();
+            const products = await MenuCollection.estimatedDocumentCount();
+            const orders = await paymentCollection.estimatedDocumentCount();
+            const result = await paymentCollection.aggregate([
+                {
+                    $group: {
+                        _id: null,
+
+                        totalReview: {
+                            $sum: '$price'
+                        }
+                    }
+                }
+            ]).toArray();
+            const revenue = result.length > 0 ? result[0].totalReview : 0;
+
+
+            res.send({ users, products, orders, revenue })
+        })
+
+
+        // get payment information and find which products payment and find per products details which has a menu collections , first you go menu collection and match the payment menuItemsId in the _id ,
+
+        app.get('/order-stats', verification , verifyAdmin, async (req, res) => {
+
+            const result = await paymentCollection.aggregate([
+                // payment collection theke menuItemId guleke split kore alada kore ber kore niye asi
+                {
+                    $unwind: "$menuItemId"
+                },
+                {
+                    //menuItemId diye ekhn khujbo 
+                    $lookup: {
+                        // menu collection er vitor khujbo 
+                        from: 'menu',
+                        // menuItemId diye khubo
+                        localField: 'menuItemId',
+                        //menuItemId er sathe menu collection er _id er sathe match korbo 
+                        foreignField: '_id',
+                        // jegulo khuje pabo oiguloke ekta name diye sekhane rakhbo 
+                        as: 'menuItems'
+                    }
+                },
+                {
+                    //details gulo  jekhane name diye rakhci take samne niye asbo 
+                    $unwind: '$menuItems'
+                },
+                {
+                    // eguloke ekta group korbo and kake kake nite cai ki ki nite cai segulo nite hobe 
+                    $group: {
+                        // _id name diye sokol category  er name gulo joma hoye thakbe 
+                        _id: "$menuItems.category",
+                        // sokol quentity gulo jog korbo 
+                        quantity: {
+                            $sum: 1
+                        },
+                        // sokol renevue gulo jog korbo mane price gulo
+                        revenue: { $sum: '$menuItems.price' }
+
+                    }
+                },
+                {
+                    // eguloke modify korbo mane kontake ki name e pete cai egulo project er vitor nibo 
+                    $project :{
+                        //jake nite cai na take 0 dibo 
+                        _id : 0,
+                        category : '$_id',
+                        quentity : '$quantity',
+                        revenue : '$revenue'
+                    }
+                }
+            ]).toArray()
+            res.send(result)
+        })
+
+
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // Ensures that the client will close when you finish/error
