@@ -221,7 +221,7 @@ async function run() {
 
         app.post('/create-payment-intent', async (req, res) => {
             const { price } = req.body;
-            console.log('price',price);
+            // console.log('price',price);
             const amount = parseInt(price * 100);
 
             const paymentIntent = await stripe.paymentIntents.create({
@@ -230,7 +230,7 @@ async function run() {
                 payment_method_types: ['card'],
 
             })
-            console.log(paymentIntent);
+            // console.log(paymentIntent);
             res.send({
                 ClientSecret: paymentIntent.client_secret
             })
@@ -248,7 +248,7 @@ async function run() {
 
         app.post('/payments', async (req, res) => {
             const data = req.body;
-            console.log(data);
+            // console.log(data);
             const query = {
                 _id: {
                     $in: data.cardId.map(id => new ObjectId(id))
