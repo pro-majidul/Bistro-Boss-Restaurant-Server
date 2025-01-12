@@ -221,6 +221,7 @@ async function run() {
 
         app.post('/create-payment-intent', async (req, res) => {
             const { price } = req.body;
+            console.log('price',price);
             const amount = parseInt(price * 100);
 
             const paymentIntent = await stripe.paymentIntents.create({
@@ -229,6 +230,7 @@ async function run() {
                 payment_method_types: ['card'],
 
             })
+            console.log(paymentIntent);
             res.send({
                 ClientSecret: paymentIntent.client_secret
             })
@@ -283,7 +285,7 @@ async function run() {
 
         // get payment information and find which products payment and find per products details which has a menu collections , first you go menu collection and match the payment menuItemsId in the _id ,
 
-        app.get('/order-stats', verification , verifyAdmin, async (req, res) => {
+        app.get('/order-stats', verification, verifyAdmin, async (req, res) => {
 
             const result = await paymentCollection.aggregate([
                 // payment collection theke menuItemId guleke split kore alada kore ber kore niye asi
@@ -323,12 +325,12 @@ async function run() {
                 },
                 {
                     // eguloke modify korbo mane kontake ki name e pete cai egulo project er vitor nibo 
-                    $project :{
+                    $project: {
                         //jake nite cai na take 0 dibo 
-                        _id : 0,
-                        category : '$_id',
-                        quentity : '$quantity',
-                        revenue : '$revenue'
+                        _id: 0,
+                        category: '$_id',
+                        quentity: '$quantity',
+                        revenue: '$revenue'
                     }
                 }
             ]).toArray()
