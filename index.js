@@ -55,6 +55,7 @@ async function run() {
         const MenuCollection = client.db('restaurants').collection('menu')
         const ReviewCollection = client.db('restaurants').collection('reviews')
         const CartCollection = client.db('restaurants').collection('carts')
+        const paymentCollection = client.db('restaurants').collection('payments')
 
 
 
@@ -219,9 +220,9 @@ async function run() {
         // payment Intern APIs
 
         app.post('/create-payment-intent', async (req, res) => {
-            const  {price}  = req.body;
+            const { price } = req.body;
             const amount = parseInt(price * 100);
-      
+
             const paymentIntent = await stripe.paymentIntents.create({
                 amount,
                 currency: 'usd',
@@ -231,6 +232,29 @@ async function run() {
             res.send({
                 ClientSecret: paymentIntent.client_secret
             })
+        })
+
+        // payment users history
+        app.get('/payments/:email', verification, async (req, res) => {
+            const query = { email: req.params.email }
+            if (req.params.email != req.user.email) {
+                return res.status(403).send({ message: 'forbidden Access' })
+            }
+            const result = await paymentCollection.find(query).toArray()
+            res.send(result)
+        })
+
+        app.post('/payments', async (req, res) => {
+            const data = req.body;
+            console.log(data);
+            const query = {
+                _id: {
+                    $in: data.cardId.map(id => new ObjectId(id))
+                }
+            }
+            const deleteResult = await CartCollection.deleteMany(query)
+            const paymentresult = await paymentCollection.insertOne(data);
+            res.send({ paymentresult, deleteResult })
         })
 
 
